@@ -1,0 +1,23 @@
+name: Avtomatik Yangilash Boti
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Har kuni yarim tunda avtomat ishga tushadi
+  workflow_dispatch: # Istalgan payt qo'lda ham ishga tushirish tugmasi
+
+jobs:
+  sync_latest_from_upstream:
+    runs-on: ubuntu-latest
+    name: Asosiy loyihadan yangilanishlarni olish
+
+    steps:
+    - name: Kodni tekshirish
+      uses: actions/checkout@v4
+
+    - name: Forkni yangilash
+      uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.3
+      with:
+        target_sync_branch: main        # Sizning vilkangizdagi asosiy tarmoq
+        target_repo_token: ${{ secrets.GITHUB_TOKEN }}
+        upstream_sync_repo: bilawalsidhu/gods-eye-view # Asosiy original loyiha manzili
+        upstream_sync_branch: main      # Original loyihaning tarmog'i

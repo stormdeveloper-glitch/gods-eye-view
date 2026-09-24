@@ -15,13 +15,14 @@ const stable = (value) =>
         )
       : value;
 
-test('the complete Realtime tool payload pins the additive analyst and satellite release', () => {
+test('the complete Realtime tool payload pins the additive analyst, satellite and Local ADS-B release', () => {
   const digest = createHash('sha256')
     .update(JSON.stringify(stable(GEV_REALTIME_TOOLS)))
     .digest('hex');
   assert.equal(
     digest,
-    '9e33ac0fa5a860a17bb6d79f2c43646b6c36d0c932590bf114814e891a1c96de',
+    // Re-derived for the additive `local-adsb` set_layer_visibility value.
+    '4de5c78425d8233794cfd37fdb797605ae93611ba71b7208f4d912b587a0e859',
   );
 });
 
@@ -84,8 +85,26 @@ test('all legacy action arguments are byte-identical after removing the delibera
   const layers = legacy.find((tool) => tool.name === 'analyst_query').parameters
     .properties.layers.items;
   layers.enum = layers.enum.filter(
-    (key) => !['satellites', 'local-datacenters', 'local-dams'].includes(key),
+    (key) =>
+      ![
+        'satellites',
+        'local-datacenters',
+        'local-dams',
+        'fire-perimeters',
+      ].includes(key),
   );
+  // Local ADS-B is an additive set_layer_visibility enum value.
+  const visibility = legacy.find((tool) => tool.name === 'set_layer_visibility')
+    .parameters.properties.layerId;
+  visibility.enum = visibility.enum.filter(
+    (key) => !['local-adsb', 'fire-perimeters'].includes(key),
+  );
+  for (const tool of legacy) {
+    for (const value of Object.values(tool.parameters.properties)) {
+      if (value.enum)
+        value.enum = value.enum.filter((key) => key !== 'fire-perimeters');
+    }
+  }
   // Independently derived by executing trusted c9f9896 actionSchemas in the restricted container.
   assert.equal(
     createHash('sha256').update(JSON.stringify(legacy)).digest('hex'),
